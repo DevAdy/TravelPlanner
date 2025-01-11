@@ -5,7 +5,7 @@ public class PythonConnector {
         try {
             // Create process builder for Python script
             ProcessBuilder pb = new ProcessBuilder("python", 
-                "C:/Users/Aditya B/javapythonintegrate/PyTravelJava/src/app.py", prompt);
+                "--your--app.py--file--path--here", prompt);
             pb.redirectErrorStream(true);
             Process process = pb.start();
 
