@@ -9,13 +9,18 @@ public class SignUpDialog extends JDialog {
     private JPasswordField confirmPasswordField;
     private boolean signupSuccessful = false;
 
+   private static final Color BACKGROUND_COLOR = new Color(0, 20, 40); // Dark blue
+    private static final Color TEXT_COLOR = new Color(0, 255, 255); // Cyan
+    private static final Color BUTTON_COLOR = new Color(0, 50, 100);
+    private static final Color BUTTON_HOVER_COLOR = new Color(0, 100, 200);
+
     public SignUpDialog(JFrame parent) {
         super(parent, "Sign Up", true);
         setupUI();
     }
 
     private void setupUI() {
-        // Main panel with geeky background
+        // Main panel with dark background and subtle gradient
         JPanel mainPanel = new JPanel(new GridBagLayout()) {
             @Override
             protected void paintComponent(Graphics g) {
@@ -23,68 +28,52 @@ public class SignUpDialog extends JDialog {
                 Graphics2D g2d = (Graphics2D) g;
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-                // Gradient background
-                GradientPaint gp = new GradientPaint(0, 0, new Color(0, 0, 50),
-                        0, getHeight(), new Color(0, 30, 60));
+                // Subtle gradient
+                GradientPaint gp = new GradientPaint(0, 0, BACKGROUND_COLOR.darker(), 0, getHeight(), BACKGROUND_COLOR);
                 g2d.setPaint(gp);
                 g2d.fillRect(0, 0, getWidth(), getHeight());
-
-                // Tech circles
-                g2d.setColor(new Color(0, 100, 255, 50));
-                for (int i = 0; i < 5; i++) {
-                    int size = 40 + i * 20;
-                    g2d.drawOval(getWidth()/2 - size/2, getHeight()/2 - size/2, size, size);
-                }
-
-                // Data streams
-                g2d.setColor(new Color(0, 255, 0, 100));
-                for (int i = 0; i < 20; i++) {
-                    int x1 = (int)(Math.random() * getWidth());
-                    int y1 = (int)(Math.random() * getHeight());
-                    int x2 = (int)(Math.random() * getWidth());
-                    int y2 = (int)(Math.random() * getHeight());
-                    g2d.drawLine(x1, y1, x2, y2);
-                }
             }
         };
         mainPanel.setLayout(new GridBagLayout());
-        
+
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(10, 10, 10, 10);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
         // Username field
-        gbc.gridx = 0; gbc.gridy = 0;
+         gbc.gridx = 0;
+        gbc.gridy++;
         JLabel userLabel = createStyledLabel("USERNAME:");
         mainPanel.add(userLabel, gbc);
-        
+
         gbc.gridx = 1;
         usernameField = new CustomTextField();
         styleTextField(usernameField);
         mainPanel.add(usernameField, gbc);
 
-        // Password field
-        gbc.gridx = 0; gbc.gridy = 1;
+        gbc.gridx = 0;
+        gbc.gridy++;
         JLabel passLabel = createStyledLabel("PASSWORD:");
         mainPanel.add(passLabel, gbc);
-        
+
         gbc.gridx = 1;
         passwordField = new CustomPasswordField();
         styleTextField(passwordField);
         mainPanel.add(passwordField, gbc);
 
-        // Confirm password field
-        gbc.gridx = 0; gbc.gridy = 2;
+        gbc.gridx = 0;
+        gbc.gridy++;
         JLabel confirmLabel = createStyledLabel("CONFIRM:");
         mainPanel.add(confirmLabel, gbc);
-        
+
         gbc.gridx = 1;
         confirmPasswordField = new CustomPasswordField();
         styleTextField(confirmPasswordField);
         mainPanel.add(confirmPasswordField, gbc);
 
+
         // Buttons panel
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 20)); // Added vertical gap
         buttonPanel.setOpaque(false);
 
         JButton signupButton = new CustomButton("SIGN UP");
@@ -96,7 +85,8 @@ public class SignUpDialog extends JDialog {
         buttonPanel.add(signupButton);
         buttonPanel.add(cancelButton);
 
-        gbc.gridx = 0; gbc.gridy = 3;
+        gbc.gridx = 0;
+        gbc.gridy++;
         gbc.gridwidth = 2;
         gbc.insets = new Insets(20, 10, 10, 10);
         mainPanel.add(buttonPanel, gbc);
@@ -137,15 +127,16 @@ public class SignUpDialog extends JDialog {
     private JLabel createStyledLabel(String text) {
         JLabel label = new JLabel(text);
         label.setFont(new Font("Consolas", Font.BOLD, 12));
-        label.setForeground(Color.CYAN);
+        label.setForeground(TEXT_COLOR);
         return label;
     }
 
     private void styleTextField(JTextField field) {
         field.setPreferredSize(new Dimension(200, 30));
-        field.setForeground(Color.CYAN);
-        field.setCaretColor(Color.CYAN);
+        field.setForeground(TEXT_COLOR);
+        field.setCaretColor(TEXT_COLOR);
         field.setFont(new Font("Consolas", Font.PLAIN, 14));
+        field.setBackground(BACKGROUND_COLOR.darker()); // Darker background for text fields
     }
 
     // Custom text field with rounded corners
@@ -153,15 +144,17 @@ public class SignUpDialog extends JDialog {
         public CustomTextField() {
             setOpaque(false);
             setBorder(new RoundedCornerBorder());
+            setForeground(TEXT_COLOR);
+            setCaretColor(TEXT_COLOR);
+            setBackground(BACKGROUND_COLOR.darker());
         }
 
         @Override
         protected void paintComponent(Graphics g) {
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setColor(new Color(0, 30, 60));
-            g2.fill(new RoundRectangle2D.Float(0, 0, getWidth() - 1, getHeight() - 1, 
-                getHeight(), getHeight()));
+            g2.setColor(BACKGROUND_COLOR.darker()); // Consistent background
+            g2.fill(new RoundRectangle2D.Float(0, 0, getWidth() - 1, getHeight() - 1, getHeight(), getHeight()));
             super.paintComponent(g);
         }
     }
@@ -171,15 +164,17 @@ public class SignUpDialog extends JDialog {
         public CustomPasswordField() {
             setOpaque(false);
             setBorder(new RoundedCornerBorder());
+            setForeground(TEXT_COLOR);
+            setCaretColor(TEXT_COLOR);
+            setBackground(BACKGROUND_COLOR.darker());
         }
 
         @Override
         protected void paintComponent(Graphics g) {
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setColor(new Color(0, 30, 60));
-            g2.fill(new RoundRectangle2D.Float(0, 0, getWidth() - 1, getHeight() - 1, 
-                getHeight(), getHeight()));
+            g2.setColor(BACKGROUND_COLOR.darker()); // Consistent background
+            g2.fill(new RoundRectangle2D.Float(0, 0, getWidth() - 1, getHeight() - 1, getHeight(), getHeight()));
             super.paintComponent(g);
         }
     }
@@ -188,23 +183,26 @@ public class SignUpDialog extends JDialog {
     static class CustomButton extends JButton {
         public CustomButton(String text) {
             super(text);
-            setForeground(Color.CYAN);
+            setForeground(TEXT_COLOR);
             setFont(new Font("Consolas", Font.BOLD, 14));
             setBorderPainted(false);
             setContentAreaFilled(false);
             setFocusPainted(false);
             setCursor(new Cursor(Cursor.HAND_CURSOR));
             setPreferredSize(new Dimension(120, 35));
+            setBackground(BUTTON_COLOR);
         }
 
         @Override
         protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g;
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             if (getModel().isArmed()) {
-                g.setColor(new Color(0, 100, 200));
+                g2.setColor(BUTTON_HOVER_COLOR);
             } else {
-                g.setColor(new Color(0, 50, 100));
+                g2.setColor(BUTTON_COLOR);
             }
-            g.fillRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 10, 10);
+            g2.fillRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 10, 10);
             super.paintComponent(g);
         }
     }

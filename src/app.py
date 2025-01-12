@@ -13,7 +13,7 @@ class Ai_assistant:
         system_prompt = """You are a travel planning assistant. Create a detailed day-by-day 
         itinerary based on the given parameters. Format your response as follows:
         
-        **TRAVEL ITINERARY FOR [DESTINATION]**
+        **TRAVEL ITINERARY FOR [DESTINATION] from [ORIGIN]**
         
         **Duration:** [START DATE] to [END DATE]
         **Budget:** $[AMOUNT]
