@@ -33,3 +33,5 @@ build/
 *.swo
 *.swn
 *.tmp
+lib/
+users.db

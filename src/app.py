@@ -1,9 +1,13 @@
 import sys
 from groq import Groq
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 class Ai_assistant:
     def __init__(self):
-        self.groq_client = Groq(api_key="--add--your---groq--api--key--here--")
+        self.groq_client = Groq(api_key=os.environ("GROQ_API_KEY"))
         
     def generate_itinerary(self, prompt):
         system_prompt = """You are a travel planning assistant. Create a detailed day-by-day 

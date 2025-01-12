@@ -4,6 +4,8 @@ import java.awt.geom.*;
 import javax.swing.border.*;
 
 public class App {
+    private static JFrame loginFrame;  // Made static to access from other methods
+
     public static void main(String[] args) {
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
@@ -11,11 +13,11 @@ public class App {
             e.printStackTrace();
         }
 
-        JFrame frame = new JFrame("System Access Portal");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(400, 300);
-        frame.setLocationRelativeTo(null);
-        frame.setResizable(false);
+        loginFrame = new JFrame("System Access Portal");  // Assign to static field
+        loginFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        loginFrame.setSize(400, 300);
+        loginFrame.setLocationRelativeTo(null);
+        loginFrame.setResizable(false);
 
         // Main panel with geeky background
         JPanel mainPanel = new JPanel(new GridBagLayout()) {
@@ -126,21 +128,26 @@ public class App {
             String password = new String(passField.getPassword());
         
             if (DatabaseManager.validateUser(username, password)) {
-                frame.dispose();
-                SwingUtilities.invokeLater(() -> new TravelPlanner(username).setVisible(true));
+                SwingUtilities.invokeLater(() -> {
+                    TravelPlanner travelPlanner = new TravelPlanner(username);
+                    travelPlanner.setVisible(true);
+                    loginFrame.dispose();  // Close login window after new window is visible
+                });
             } else {
-                JOptionPane.showMessageDialog(frame, "Access Denied", "Error", 
+                JOptionPane.showMessageDialog(loginFrame, "Access Denied", "Error", 
                     JOptionPane.ERROR_MESSAGE);
             }
         });
 
         signupButton.addActionListener(e -> {
-            SignUpDialog dialog = new SignUpDialog(frame);
+            SignUpDialog dialog = new SignUpDialog(loginFrame);
+            dialog.setLocationRelativeTo(loginFrame);  // Center dialog relative to login window
+            dialog.setModal(true);  // Make dialog modal so it must be closed before continuing
             dialog.setVisible(true);
         });
 
-        frame.add(mainPanel);
-        frame.setVisible(true);
+        loginFrame.add(mainPanel);
+        loginFrame.setVisible(true);
     }
 
     // Custom text field with rounded corners
