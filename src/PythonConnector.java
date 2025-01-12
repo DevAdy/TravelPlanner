@@ -1,11 +1,15 @@
 import java.io.*;
+import io.github.cdimascio.dotenv.Dotenv;
 
 public class PythonConnector {
     public static String getAIResponse(String prompt) {
         try {
             // Create process builder for Python script
-            ProcessBuilder pb = new ProcessBuilder("python", 
-                "--your--app.py--file--path--here", prompt);
+            Dotenv dotenv = Dotenv.load();
+            String pyEnv = dotenv.get("PYTHON_ENV");
+            String pyPath = dotenv.get("PYTHON_SCRIPT_PATH");
+            ProcessBuilder pb = new ProcessBuilder(pyEnv, 
+                pyPath, prompt);
             pb.redirectErrorStream(true);
             Process process = pb.start();
 
