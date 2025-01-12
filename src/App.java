@@ -124,10 +124,10 @@ public class App {
         loginButton.addActionListener(e -> {
             String username = userField.getText();
             String password = new String(passField.getPassword());
-
+        
             if (DatabaseManager.validateUser(username, password)) {
                 frame.dispose();
-                SwingUtilities.invokeLater(() -> new TravelPlanner().setVisible(true));
+                SwingUtilities.invokeLater(() -> new TravelPlanner(username).setVisible(true));
             } else {
                 JOptionPane.showMessageDialog(frame, "Access Denied", "Error", 
                     JOptionPane.ERROR_MESSAGE);

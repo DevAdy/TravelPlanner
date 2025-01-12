@@ -12,8 +12,11 @@ public class TravelPlanner extends JFrame {
     private JTextField endDate;
     private JSlider budget;
     private JPanel interestsPanel;
+    private String currentUser;
     
-    public TravelPlanner() {
+    public TravelPlanner(String username) {
+        this.currentUser = username;
+        System.out.println("TravelPlanner initialized for user: " + username); // Debug line
         setTitle("Travel Itinerary Planner");
         setSize(550, 550);
         setLocationRelativeTo(null);
@@ -61,6 +64,64 @@ public class TravelPlanner extends JFrame {
         titleLabel.setFont(new Font("Consolas", Font.BOLD, 24));
         titleLabel.setForeground(Color.CYAN);
         headerPanel.add(titleLabel);
+
+        // Add profile button to header panel
+        JButton profileButton = new JButton() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                
+                // Draw circle background
+                if (getModel().isRollover()) {
+                    g2d.setColor(new Color(0, 100, 200));
+                } else {
+                    g2d.setColor(new Color(0, 50, 100));
+                }
+                g2d.fillOval(0, 0, getWidth() - 1, getHeight() - 1);
+                
+                // Draw user icon
+                g2d.setColor(Color.CYAN);
+                int centerX = getWidth() / 2;
+                int centerY = getHeight() / 2;
+                
+                // Head
+                g2d.fillOval(centerX - 8, centerY - 8, 16, 16);
+                
+                // Body
+                g2d.fillArc(centerX - 12, centerY + 4, 24, 24, 0, 180);
+                
+                g2d.dispose();
+            }
+        };
+        
+        profileButton.setPreferredSize(new Dimension(40, 40));
+        profileButton.setBorderPainted(false);
+        profileButton.setContentAreaFilled(false);
+        profileButton.setFocusPainted(false);
+        profileButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        profileButton.addActionListener(e -> showProfile());
+
+        profileButton.setToolTipText("View Profile");
+
+        profileButton.setVisible(true);
+        profileButton.setEnabled(true);
+
+        System.out.println("Profile button initialized. Is visible: " + 
+        profileButton.isVisible() + ", Is enabled: " + profileButton.isEnabled());
+        
+        profileButton.addActionListener(e -> {
+            System.out.println("Opening profile for user: " + currentUser); // Debug line
+            showProfile();
+        });
+
+        // Add to header with right alignment
+        headerPanel.setLayout(new BorderLayout());
+        headerPanel.add(titleLabel, BorderLayout.CENTER);
+        JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        rightPanel.setOpaque(false);
+        rightPanel.add(profileButton);
+        headerPanel.add(rightPanel, BorderLayout.EAST);
 
         // Form Panel
         JPanel formPanel = new JPanel(new GridBagLayout());
@@ -320,6 +381,21 @@ public class TravelPlanner extends JFrame {
         @Override
         public Insets getBorderInsets(Component c) {
             return new Insets(4, 8, 4, 8);
+        }
+    }
+
+    private void showProfile() {
+        try {
+            System.out.println("Opening profile for user: " + currentUser); // Debug line
+            ProfileDialog dialog = new ProfileDialog(this, currentUser);
+            dialog.setLocationRelativeTo(this);
+            dialog.setVisible(true);
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, 
+                "Error opening profile: " + e.getMessage(),
+                "Error", 
+                JOptionPane.ERROR_MESSAGE);
         }
     }
 }
