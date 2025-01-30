@@ -4,26 +4,135 @@ import java.awt.geom.*;
 import javax.swing.border.*;
 import java.util.*;
 import java.util.List;
+import java.io.File;
+import java.io.IOException;
+import javax.swing.Timer;
 
 public class TravelPlanner extends JFrame {
     private final String[] INTERESTS = {"Culture", "Food", "Shopping", "Nature", "Adventure"};
+    private JTextField originField;
     private JTextField destinationField;
     private JTextField startDate;
     private JTextField endDate;
     private JSlider budget;
     private JPanel interestsPanel;
     private String currentUser;
+    private Font poppinsFont;
+    private List<NeuronNode> neurons;
+    private Timer animationTimer;
+    private Random random = new Random();
+    
+    // Neuron node class for background animation
+    static class NeuronNode {
+        double x, y;
+        double dx, dy;
+        List<NeuronNode> connections;
+        double pulsePhase;
+        double activeState;
+        double targetActiveState;
+        
+        NeuronNode(double x, double y) {
+            this.x = x;
+            this.y = y;
+            this.dx = new Random().nextDouble() * 1.2 - 0.6;
+            this.dy = new Random().nextDouble() * 1.2 - 0.6;
+            this.connections = new ArrayList<>();
+            this.pulsePhase = new Random().nextDouble() * Math.PI * 2;
+            this.activeState = new Random().nextBoolean() ? 1.0 : 0.0;
+            this.targetActiveState = this.activeState;
+        }
+
+        void update() {
+            x += dx * 0.3;
+            y += dy * 0.3;
+
+            if (x < 50) {
+                dx = Math.abs(dx) * 0.8;
+                x = 50;
+            } else if (x > 1230) {
+                dx = -Math.abs(dx) * 0.8;
+                x = 1230;
+            }
+            if (y < 50) {
+                dy = Math.abs(dy) * 0.8;
+                y = 50;
+            } else if (y > 750) {
+                dy = -Math.abs(dy) * 0.8;
+                y = 750;
+            }
+
+            dx += (new Random().nextDouble() - 0.5) * 0.1;
+            dy += (new Random().nextDouble() - 0.5) * 0.1;
+
+            double speed = Math.sqrt(dx * dx + dy * dy);
+            if (speed > 1.5) {
+                dx = (dx / speed) * 1.5;
+                dy = (dy / speed) * 1.5;
+            }
+
+            pulsePhase += 0.03;
+            if (pulsePhase > Math.PI * 2) {
+                pulsePhase = 0;
+                targetActiveState = new Random().nextDouble() < 0.2 ? 1.0 : 0.0;
+            }
+
+            double diff = targetActiveState - activeState;
+            activeState += diff * 0.1;
+        }
+    }
     
     public TravelPlanner(String username) {
+        // Initialize neurons
+        neurons = new ArrayList<>();
+        int numNeurons = 50;
+        for (int i = 0; i < numNeurons; i++) {
+            neurons.add(new NeuronNode(random.nextDouble() * 1280, random.nextDouble() * 800));
+        }
+
+        // Connect nearby neurons
+        for (NeuronNode n1 : neurons) {
+            for (NeuronNode n2 : neurons) {
+                if (n1 != n2) {
+                    double dist = Math.sqrt(Math.pow(n1.x - n2.x, 2) + Math.pow(n1.y - n2.y, 2));
+                    if (dist < 200) {
+                        n1.connections.add(n2);
+                    }
+                }
+            }
+        }
+
+        // Start animation timer
+        animationTimer = new Timer(30, e -> {
+            for (NeuronNode neuron : neurons) {
+                neuron.update();
+            }
+            repaint();
+        });
+        animationTimer.start();
+
+        // Font initialization and rest of the constructor code...
+        try {
+            File fontFile = new File("fonts/Poppins-Regular.ttf");
+            if (!fontFile.exists()) {
+                System.err.println("Font file not found: " + fontFile.getAbsolutePath());
+            } else {
+                poppinsFont = Font.createFont(Font.TRUETYPE_FONT, fontFile).deriveFont(12f);
+                GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+                ge.registerFont(poppinsFont);
+            }
+        } catch (IOException | FontFormatException e) {
+            System.err.println("Error loading Poppins font: " + e.getMessage());
+            poppinsFont = new Font("Arial", Font.PLAIN, 12);
+        }
+
         this.currentUser = username;
-        System.out.println("TravelPlanner initialized for user: " + username); // Debug line
-        setTitle("Travel Itinerary Planner");
-        setSize(550, 550);
+        setTitle("\tTravel Planner");
+        setSize(1280, 800);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setResizable(false);
 
-        // Main panel with geeky background
+        // Main panel with neural network background
         JPanel mainPanel = new JPanel(new BorderLayout()) {
             @Override
             protected void paintComponent(Graphics g) {
@@ -31,48 +140,73 @@ public class TravelPlanner extends JFrame {
                 Graphics2D g2d = (Graphics2D) g;
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-                // Gradient background
-                GradientPaint gp = new GradientPaint(0, 0, new Color(0, 0, 50),
-                        0, getHeight(), new Color(0, 30, 60));
+                // Dark background gradient
+                GradientPaint gp = new GradientPaint(0, 0, new Color(0, 0, 30),
+                        0, getHeight(), new Color(0, 20, 40));
                 g2d.setPaint(gp);
                 g2d.fillRect(0, 0, getWidth(), getHeight());
 
-                // Tech circles
-                g2d.setColor(new Color(0, 100, 255, 50));
-                for (int i = 0; i < 5; i++) {
-                    int size = 40 + i * 20;
-                    g2d.drawOval(getWidth()/2 - size/2, getHeight()/2 - size/2, size, size);
+                // Draw neural connections
+                for (NeuronNode neuron : neurons) {
+                    if (neuron.activeState > 0.1) {
+                        for (NeuronNode connection : neuron.connections) {
+                            if (connection.activeState > 0.1) {
+                                double pulse = (Math.sin(neuron.pulsePhase) + 1) * 0.5;
+                                int alpha = (int)(pulse * 150 * neuron.activeState * connection.activeState);
+                                
+                                GradientPaint connectionGradient = new GradientPaint(
+                                    (float)neuron.x, (float)neuron.y, new Color(0, 150, 255, alpha),
+                                    (float)connection.x, (float)connection.y, new Color(0, 255, 255, alpha)
+                                );
+                                g2d.setPaint(connectionGradient);
+                                g2d.setStroke(new BasicStroke(1.5f));
+                                g2d.draw(new Line2D.Double(neuron.x, neuron.y, connection.x, connection.y));
+                            }
+                        }
+                    }
                 }
 
-                // Data streams
-                g2d.setColor(new Color(0, 255, 0, 100));
-                for (int i = 0; i < 20; i++) {
-                    int x1 = (int)(Math.random() * getWidth());
-                    int y1 = (int)(Math.random() * getHeight());
-                    int x2 = (int)(Math.random() * getWidth());
-                    int y2 = (int)(Math.random() * getHeight());
-                    g2d.drawLine(x1, y1, x2, y2);
+                // Draw neurons
+                for (NeuronNode neuron : neurons) {
+                    double pulse = (Math.sin(neuron.pulsePhase) + 1) * 0.5;
+                    
+                    if (neuron.activeState > 0.1) {
+                        for (int i = 6; i > 0; i--) {
+                            int alpha = (int)(pulse * 50 * neuron.activeState);
+                            g2d.setColor(new Color(0, 255, 255, alpha));
+                            int size = (int)(i * 4 * neuron.activeState);
+                            g2d.fillOval((int)neuron.x - size/2, (int)neuron.y - size/2, size, size);
+                        }
+                        
+                        int alpha = (int)(200 * neuron.activeState);
+                        g2d.setColor(new Color(0, 255, 255, alpha));
+                        g2d.fillOval((int)neuron.x - 3, (int)neuron.y - 3, 6, 6);
+                    }
+                    
+                    int baseAlpha = (int)(100 * (1 - neuron.activeState) + 150 * neuron.activeState);
+                    g2d.setColor(new Color(0, 100 + (int)(155 * neuron.activeState), 
+                        150 + (int)(105 * neuron.activeState), baseAlpha));
+                    g2d.fillOval((int)neuron.x - 2, (int)neuron.y - 2, 4, 4);
                 }
             }
         };
 
-        // Header Panel
+       // Header Panel
         JPanel headerPanel = new JPanel();
         headerPanel.setOpaque(false);
         headerPanel.setPreferredSize(new Dimension(450, 60));
-        JLabel titleLabel = new JLabel("TRAVEL PLANNER");
-        titleLabel.setFont(new Font("Consolas", Font.BOLD, 24));
+        JLabel titleLabel = new JLabel("\t  TRAVEL PLANNER");
+        titleLabel.setFont(poppinsFont.deriveFont(Font.BOLD, 24f));
         titleLabel.setForeground(Color.CYAN);
         headerPanel.add(titleLabel);
 
-        // Add profile button to header panel
+        // Profile Button
         JButton profileButton = new JButton() {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2d = (Graphics2D) g.create();
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 
-                // Draw circle background
                 if (getModel().isRollover()) {
                     g2d.setColor(new Color(0, 100, 200));
                 } else {
@@ -80,15 +214,11 @@ public class TravelPlanner extends JFrame {
                 }
                 g2d.fillOval(0, 0, getWidth() - 1, getHeight() - 1);
                 
-                // Draw user icon
                 g2d.setColor(Color.CYAN);
                 int centerX = getWidth() / 2;
                 int centerY = getHeight() / 2;
                 
-                // Head
                 g2d.fillOval(centerX - 8, centerY - 8, 16, 16);
-                
-                // Body
                 g2d.fillArc(centerX - 12, centerY + 4, 24, 24, 0, 180);
                 
                 g2d.dispose();
@@ -132,6 +262,7 @@ public class TravelPlanner extends JFrame {
         gbc.insets = new Insets(8, 8, 8, 8);
 
         // Initialize components with custom style
+        originField = new CustomTextField();
         destinationField = new CustomTextField();
         startDate = new CustomTextField();
         endDate = new CustomTextField();
@@ -140,18 +271,19 @@ public class TravelPlanner extends JFrame {
         interestsPanel.setOpaque(false);
 
         // Add form fields
-        addFormField(formPanel, "DESTINATION:", destinationField, gbc, 0);
-        addFormField(formPanel, "START DATE:", startDate, gbc, 1);
-        addFormField(formPanel, "END DATE:", endDate, gbc, 2);
+        addFormField(formPanel, "ORIGIN:", originField, gbc, 0);
+        addFormField(formPanel, "DESTINATION:", destinationField, gbc, 1);
+        addFormField(formPanel, "START DATE:", startDate, gbc, 2);
+        addFormField(formPanel, "END DATE:", endDate, gbc, 3);
 
         // Budget Slider
-        gbc.gridx = 0; gbc.gridy = 3;
+        gbc.gridx = 0; gbc.gridy = 4;
         formPanel.add(createStyledLabel("BUDGET ($):"), gbc);
         gbc.gridx = 1;
         formPanel.add(budget, gbc);
 
         // Interests
-        gbc.gridx = 0; gbc.gridy = 4;
+        gbc.gridx = 0; gbc.gridy = 5;
         formPanel.add(createStyledLabel("INTERESTS:"), gbc);
         for (String interest : INTERESTS) {
             JCheckBox cb = new JCheckBox(interest);
@@ -175,13 +307,13 @@ public class TravelPlanner extends JFrame {
             }
         };
         styleButton(generateButton);
-        gbc.gridx = 0; gbc.gridy = 5;
+        gbc.gridx = 0; gbc.gridy = 6;
         gbc.gridwidth = 2;
         gbc.insets = new Insets(20, 8, 8, 8);
         formPanel.add(generateButton, gbc);
 
         generateButton.addActionListener(e -> {
-            if (destinationField.getText().trim().isEmpty() || 
+            if (originField.getText().trim().isEmpty() || destinationField.getText().trim().isEmpty() || 
                 startDate.getText().trim().isEmpty() || 
                 endDate.getText().trim().isEmpty()) {
                 JOptionPane.showMessageDialog(this, 
@@ -190,7 +322,7 @@ public class TravelPlanner extends JFrame {
                     JOptionPane.ERROR_MESSAGE);
                 return;
             }
-
+            String origin = originField.getText().trim();
             String destination = destinationField.getText().trim();
             String start = startDate.getText().trim();
             String end = endDate.getText().trim();
@@ -207,9 +339,9 @@ public class TravelPlanner extends JFrame {
             }
 
             String prompt = String.format(
-                "Create a travel itinerary for %s from %s to %s with a budget of $%d. " +
+                "Create a travel itinerary from %s place to %s place from %s to %s with a budget of $%d. " +
                 "Interests include: %s", 
-                destination, start, end, budgetValue, 
+                origin, destination, start, end, budgetValue, 
                 String.join(", ", selectedInterests)
             );
 
@@ -280,7 +412,7 @@ public class TravelPlanner extends JFrame {
                         buttonPanel.add(closeButton);
                         resultDialog.add(buttonPanel, BorderLayout.SOUTH);
                 
-                        resultDialog.setSize(600, 600);
+                        resultDialog.setSize(1280, 800);
                         resultDialog.setLocationRelativeTo(TravelPlanner.this);
                         resultDialog.setVisible(true);
                     } catch (Exception ex) {
@@ -339,7 +471,7 @@ public class TravelPlanner extends JFrame {
 
     private JLabel createStyledLabel(String text) {
         JLabel label = new JLabel(text);
-        label.setFont(new Font("Consolas", Font.BOLD, 12));
+        label.setFont(poppinsFont.deriveFont(Font.BOLD)); // Use Poppins Bold
         label.setForeground(Color.CYAN);
         return label;
     }
@@ -348,20 +480,22 @@ public class TravelPlanner extends JFrame {
         field.setPreferredSize(new Dimension(200, 30));
         field.setForeground(Color.CYAN);
         field.setCaretColor(Color.CYAN);
-        field.setFont(new Font("Consolas", Font.PLAIN, 14));
+        field.setFont(poppinsFont.deriveFont(14f)); // Use Poppins Regular, size 14
     }
 
     private void styleCheckBox(JCheckBox checkBox) {
-        checkBox.setFont(new Font("Consolas", Font.PLAIN, 12));
+        checkBox.setFont(poppinsFont); // Use Poppins Regular, default size
         checkBox.setForeground(Color.CYAN);
-        checkBox.setBackground(null);
+        checkBox.setBackground(new Color(0, 30, 60));
         checkBox.setFocusPainted(false);
+        checkBox.setBorderPainted(false);
+        checkBox.setOpaque(true);
     }
 
     private void styleButton(JButton button) {
         button.setPreferredSize(new Dimension(200, 35));
         button.setForeground(Color.CYAN);
-        button.setFont(new Font("Consolas", Font.BOLD, 14));
+        button.setFont(poppinsFont.deriveFont(Font.BOLD, 14f)); // Use Poppins Bold, size 14
         button.setFocusPainted(false);
         button.setBorderPainted(false);
         button.setContentAreaFilled(false);
@@ -397,5 +531,12 @@ public class TravelPlanner extends JFrame {
                 "Error", 
                 JOptionPane.ERROR_MESSAGE);
         }
+    }
+    @Override
+    public void dispose() {
+        if (animationTimer != null) {
+            animationTimer.stop();
+        }
+        super.dispose();
     }
 }

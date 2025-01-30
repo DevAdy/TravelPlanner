@@ -8,8 +8,21 @@ import javax.swing.plaf.basic.BasicComboBoxUI;
 import javax.swing.plaf.basic.BasicScrollBarUI;
 
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 public class ProfileDialog extends JDialog {
+
+    private static Font poppinsFont;
+    private static List<NeuronNode> neurons;
+    private static Random random = new Random();
+    private static final Color BACKGROUND_COLOR = new Color(0, 20, 40);
+    private static final Color NEURON_COLOR = new Color(0, 100, 150);
+    private static final Color CONNECTION_COLOR = new Color(0, 150, 255);
+    private static final Color TEXT_COLOR = new Color(0, 255, 255);
     private final String username;
     private JTextField nameField;
     private JComboBox<String> genderBox;
@@ -20,13 +33,89 @@ public class ProfileDialog extends JDialog {
     private JProgressBar completionBar;
     private boolean editMode = false;
 
+    static class NeuronNode {
+        double x, y;
+        double dx, dy;
+        List<NeuronNode> connections;
+        double pulsePhase;
+        double activeState;
+        double targetActiveState;
+        
+        NeuronNode(double x, double y) {
+            this.x = x;
+            this.y = y;
+            this.dx = new Random().nextDouble() * 1.2 - 0.6;
+            this.dy = new Random().nextDouble() * 1.2 - 0.6;
+            this.connections = new ArrayList<>();
+            this.pulsePhase = new Random().nextDouble() * Math.PI * 2;
+            this.activeState = new Random().nextBoolean() ? 1.0 : 0.0;
+            this.targetActiveState = this.activeState;
+        }
+
+        void update() {
+            x += dx * 0.3;
+            y += dy * 0.3;
+
+            if (x < 50) {
+                dx = Math.abs(dx) * 0.8;
+                x = 50;
+            } else if (x > 1230) {
+                dx = -Math.abs(dx) * 0.8;
+                x = 1230;
+            }
+            if (y < 50) {
+                dy = Math.abs(dy) * 0.8;
+                y = 50;
+            } else if (y > 750) {
+                dy = -Math.abs(dy) * 0.8;
+                y = 750;
+            }
+
+            dx += (new Random().nextDouble() - 0.5) * 0.1;
+            dy += (new Random().nextDouble() - 0.5) * 0.1;
+
+            double speed = Math.sqrt(dx * dx + dy * dy);
+            if (speed > 1.5) {
+                dx = (dx / speed) * 1.5;
+                dy = (dy / speed) * 1.5;
+            }
+
+            pulsePhase += 0.03;
+            if (pulsePhase > Math.PI * 2) {
+                pulsePhase = 0;
+                targetActiveState = new Random().nextDouble() < 0.2 ? 1.0 : 0.0;
+            }
+
+            double diff = targetActiveState - activeState;
+            activeState += diff * 0.1;
+        }
+    }
+
     public ProfileDialog(JFrame parent, String username) {
         super(parent, "User Profile", true);
         this.username = username;
-        setDefaultCloseOperation(DISPOSE_ON_CLOSE);  // Add this line
+        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+        loadPoppinsFont(); // Load font
         initializeComponents();
         setupUI();
         loadProfileData();
+
+        neurons = new ArrayList<>();
+        int numNeurons = 50;
+        for (int i = 0; i < numNeurons; i++) {
+            neurons.add(new NeuronNode(random.nextDouble() * 450, random.nextDouble() * 700)); // Adjusted size
+        }
+
+        for (NeuronNode n1 : neurons) {
+            for (NeuronNode n2 : neurons) {
+                if (n1 != n2) {
+                    double dist = Math.sqrt(Math.pow(n1.x - n2.x, 2) + Math.pow(n1.y - n2.y, 2));
+                    if (dist < 150) {
+                        n1.connections.add(n2);
+                    }
+                }
+            }
+        }
     }
 
     private void initializeComponents() {
@@ -102,6 +191,19 @@ public class ProfileDialog extends JDialog {
         topPanel.add(progressPanel, topGbc);
     }
     
+    private void loadPoppinsFont() {
+        try {
+            File fontFile = new File("fonts/Poppins-Regular.ttf");
+            if (fontFile.exists()) {
+                poppinsFont = Font.createFont(Font.TRUETYPE_FONT, fontFile).deriveFont(12f);
+                GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+                ge.registerFont(poppinsFont);
+            }
+        } catch (IOException | FontFormatException e) {
+            System.err.println("Error loading Poppins font: " + e.getMessage());
+            poppinsFont = new Font("Arial", Font.PLAIN, 12);
+        }
+    }
 
     private void setupUI() {
         JPanel mainPanel = new JPanel(new BorderLayout(10, 10)) {
@@ -110,32 +212,50 @@ public class ProfileDialog extends JDialog {
                 super.paintComponent(g);
                 Graphics2D g2d = (Graphics2D) g;
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-    
-                // Gradient background
-                GradientPaint gp = new GradientPaint(0, 0, new Color(0, 0, 50),
-                        0, getHeight(), new Color(0, 30, 60));
-                g2d.setPaint(gp);
+
+                g2d.setColor(BACKGROUND_COLOR);
                 g2d.fillRect(0, 0, getWidth(), getHeight());
-    
-                // Tech circles
-                g2d.setColor(new Color(0, 100, 255, 50));
-                for (int i = 0; i < 5; i++) {
-                    int size = 40 + i * 20;
-                    g2d.drawOval(getWidth()/2 - size/2, getHeight()/2 - size/2, size, size);
+
+                for (NeuronNode neuron : neurons) {
+                    if (neuron.activeState > 0.1) {
+                        for (NeuronNode connection : neuron.connections) {
+                            if (connection.activeState > 0.1) {
+                                double pulse = (Math.sin(neuron.pulsePhase) + 1) * 0.5;
+                                int alpha = (int)(pulse * 150 * neuron.activeState * connection.activeState);
+
+                                g2d.setColor(new Color(CONNECTION_COLOR.getRed(), CONNECTION_COLOR.getGreen(), CONNECTION_COLOR.getBlue(), alpha));
+                                g2d.setStroke(new BasicStroke(1.5f));
+                                g2d.draw(new Line2D.Double(neuron.x, neuron.y, connection.x, connection.y));
+                            }
+                        }
+                    }
                 }
-    
-                // Data streams
-                g2d.setColor(new Color(0, 255, 0, 100));
-                for (int i = 0; i < 20; i++) {
-                    int x1 = (int)(Math.random() * getWidth());
-                    int y1 = (int)(Math.random() * getHeight());
-                    int x2 = (int)(Math.random() * getWidth());
-                    int y2 = (int)(Math.random() * getHeight());
-                    g2d.drawLine(x1, y1, x2, y2);
+
+                for (NeuronNode neuron : neurons) {
+                    double pulse = (Math.sin(neuron.pulsePhase) + 1) * 0.5;
+
+                    if (neuron.activeState > 0.1) {
+                        for (int i = 6; i > 0; i--) {
+                            int alpha = (int)(pulse * 50 * neuron.activeState);
+                            g2d.setColor(new Color(TEXT_COLOR.getRed(), TEXT_COLOR.getGreen(), TEXT_COLOR.getBlue(), alpha));
+                            int size = (int)(i * 4 * neuron.activeState);
+                            g2d.fillOval((int)neuron.x - size/2, (int)neuron.y - size/2, size, size);
+                        }
+                        int alpha = (int)(200 * neuron.activeState);
+                        g2d.setColor(new Color(TEXT_COLOR.getRed(), TEXT_COLOR.getGreen(), TEXT_COLOR.getBlue(), alpha));
+                        g2d.fillOval((int)neuron.x - 3, (int)neuron.y - 3, 6, 6);
+                    }
+
+                    int baseAlpha = (int)(100 * (1 - neuron.activeState) + 150 * neuron.activeState);
+                    g2d.setColor(new Color(NEURON_COLOR.getRed(), NEURON_COLOR.getGreen(), NEURON_COLOR.getBlue(), baseAlpha));
+                    g2d.fillOval((int)neuron.x - 2, (int)neuron.y - 2, 4, 4);
                 }
+                repaint();
             }
         };
+
         mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        mainPanel.setBackground(BACKGROUND_COLOR);
     
         // Top Panel
         JPanel topPanel = new JPanel(new GridBagLayout());
@@ -153,8 +273,8 @@ public class ProfileDialog extends JDialog {
     
         // Username
         JLabel usernameLabel = new JLabel(username.toUpperCase());
-        usernameLabel.setFont(new Font("Consolas", Font.BOLD, 24));
-        usernameLabel.setForeground(Color.CYAN);
+        usernameLabel.setFont(poppinsFont.deriveFont(24f)); // Use poppinsFont
+        usernameLabel.setForeground(TEXT_COLOR);
         usernameLabel.setHorizontalAlignment(SwingConstants.CENTER);
         topGbc.gridy = 1;
         topPanel.add(usernameLabel, topGbc);
@@ -213,6 +333,7 @@ public class ProfileDialog extends JDialog {
         //buttonPanel.add(closeButton);
         
         JButton editButton = new CustomButton("EDIT PROFILE");
+        editButton.setFont(poppinsFont.deriveFont(14f));
         JButton saveButton = new CustomButton("SAVE");
         editButton.addActionListener(e -> toggleEditMode());
         saveButton.addActionListener(e -> saveProfile());
@@ -234,8 +355,8 @@ public class ProfileDialog extends JDialog {
             int gridy, GridBagConstraints gbc) {
         // Label
         JLabel label = new JLabel(labelText);
-        label.setForeground(Color.CYAN);
-        label.setFont(new Font("Consolas", Font.BOLD, 14));
+        label.setForeground(TEXT_COLOR);
+        label.setFont(poppinsFont.deriveFont(14f));
         gbc.gridx = 0;
         gbc.gridy = gridy;
         gbc.weightx = 0.3;
@@ -457,9 +578,9 @@ public class ProfileDialog extends JDialog {
         public CustomTextField() {
             setOpaque(false);
             setBorder(new RoundedCornerBorder());
-            setForeground(Color.CYAN);
-            setCaretColor(Color.CYAN);
-            setFont(new Font("Consolas", Font.PLAIN, 14));
+            setForeground(TEXT_COLOR);
+            setCaretColor(TEXT_COLOR);
+            setFont(poppinsFont.deriveFont(14f)); // Use poppinsFont
         }
 
         @Override
@@ -476,8 +597,8 @@ public class ProfileDialog extends JDialog {
     static class CustomButton extends JButton {
         public CustomButton(String text) {
             super(text);
-            setForeground(Color.CYAN);
-            setFont(new Font("Consolas", Font.BOLD, 14));
+            setForeground(TEXT_COLOR);
+            setFont(poppinsFont.deriveFont(Font.BOLD, 14f));
             setBorderPainted(false);
             setContentAreaFilled(false);
             setFocusPainted(false);
