@@ -94,6 +94,11 @@ CREATE TABLE users (
 - AI Integration: Python + Groq
 - UI Theme: Custom Cyberpunk
 
+## Authors
+
+| <a href="https://github.com/DevAdy"><img src="https://github.com/DevAdy.png" width="100px" style="border-radius: 50%;" /></a> | <a href="https://github.com/abhayprabhakar"><img src="https://github.com/abhayprabhakar.png" width="100px" style="border-radius: 50%;" /></a> | <a href="https://github.com/knighthyper"><img src="https://github.com/knighthyper.png" width="100px" style="border-radius: 50%;" /></a> | <a href="https://github.com/toxicskulll"><img src="https://github.com/toxicskulll.png" width="100px" style="border-radius: 50%;" /></a> |
+|:---:|:---:|:---:|:---:|
+
 ## Contributing
 
 Feel free to fork the project and submit pull requests for any improvements.
